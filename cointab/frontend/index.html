@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cointab SE-ASSIGNMENT</title>
+  </head>
+  <body>
+    <h1>Cointab SE-ASSIGNMENT</h1>
+    <button id="allUsersBtn">All Users</button>
+    <div id="userData"></div>
+    <div id="users-container"></div>
+  </body>
+</html>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    async function fetchAndDisplayUsers() {
+      try {
+        const response = await fetch("http://localhost:3001/users/allUsers");
+        if (!response.ok) {
+          throw new Error("Failed to fetch users");
+        }
+        const users = await response.json();
+        console.log("users", users);
+        const usersContainer = document.getElementById("users-container");
+        usersContainer.innerHTML = "";
+
+        users.forEach((user) => {
+          const userElement = document.createElement("div");
+          userElement.classList.add("user");
+
+          userElement.innerHTML = `
+          <p>Id: ${user.id}</p>
+          <h2>${user.name}</h2>
+          <p>Email: ${user.email}</p>
+          <p>Phone: ${user.phone}</p>
+          <p>Website: ${user.website}</p>
+          <p>City: ${user.address.city}</p>
+          <p>Company: ${user.company.name}</p>
+        `;
+          let id = user.id;
+          const addButton = document.createElement("button");
+          addButton.textContent = "Add";
+          addButton.addEventListener("click", async () => {
+            try {
+              const addUserResponse = await fetch(
+                "http://localhost:3001/users/allUsers",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ id }),
+                }
+              );
+              console.log("addUserResponse", addUserResponse);
+              if (!addUserResponse.ok) {
+                throw new Error("Failed to add user");
+              }
+
+              addButton.style.display = "none";
+              openButton.style.display = "block";
+            } catch (error) {
+              console.error("Error adding user:", error);
+            }
+          });
+
+          userElement.appendChild(addButton);
+
+          const openButton = document.createElement("button");
+          openButton.textContent = "Open";
+          openButton.style.display = "none";
+          openButton.addEventListener("click", () => {
+            window.location.href = `post.html?userId=${id}`;
+          });
+          userElement.appendChild(openButton);
+
+          usersContainer.appendChild(userElement);
+        });
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+
+    fetchAndDisplayUsers();
+  });
+</script>

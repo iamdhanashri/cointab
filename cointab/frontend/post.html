@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post Page</title>
+  </head>
+  <body>
+    <h1>User Information</h1>
+    <p>Name: <span id="user_name"></span></p>
+    <p>Email: <span id="user_email"></span></p>
+    <p>Phone: <span id="user_phone"></span></p>
+    <p>Website: <span id="user_website"></span></p>
+    <p>City: <span id="user_city"></span></p>
+    <p>Company: <span id="user_company"></span></p>
+
+    <!-- Buttons for Bulk Add and Download in Excel -->
+    <button id="bulk-add-button" onclick="bulkAddPosts()">Bulk Add</button>
+    <button
+      id="download-excel-button"
+      onclick="downloadExcel()"
+      style="display: none"
+    >
+      Download In Excel
+    </button>
+
+    <script>
+      async function fetchUserData(userId) {
+        try {
+          const response = await fetch(`http://localhost:3001/users/${userId}`);
+          if (!response.ok) {
+            throw new Error("Failed to fetch user data");
+          }
+          const userData = await response.json();
+
+          document.getElementById("user_name").textContent = userData.name;
+          document.getElementById("user_email").textContent = userData.email;
+          document.getElementById("user_phone").textContent = userData.phone;
+          document.getElementById("user_website").textContent =
+            userData.website;
+          document.getElementById("user_city").textContent =
+            userData.address.city;
+          document.getElementById("user_company").textContent =
+            userData.company.name;
+
+          const postsResponse = await fetch(
+            `http://localhost:3001/posts/${userId}`
+          );
+          if (!postsResponse.ok) {
+            throw new Error("Failed to fetch posts data");
+          }
+        } catch (error) {
+          console.error("Error:", error.message);
+        }
+      }
+
+      // Function to handle bulk adding of posts
+      async function bulkAddPosts() {
+        try {
+          const userId = idGetFunction();
+
+          // Gather post data from the page, for example:
+          const postData = {
+            userId: userId,
+            // You can gather other relevant post data from the page as needed
+          };
+
+          // Send a POST request to the server-side route to handle bulk addition of posts
+          const response = await fetch(
+            `http://localhost:3001/posts/${userId}/bulkAdd`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(postData),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to add posts");
+          }
+
+          // After adding posts, hide the Bulk Add button and show the Download in Excel button
+          document.getElementById("bulk-add-button").style.display = "none";
+          document.getElementById("download-excel-button").style.display =
+            "block";
+        } catch (error) {
+          console.error("Error:", error.message);
+        }
+      }
+
+      // Function to handle downloading of posts in Excel format
+      async function downloadExcel() {
+        try {
+          const userId = idGetFunction();
+
+          // Send a GET request to the server-side route to handle downloading Excel file
+          const response = await fetch(
+            `http://localhost:3001/posts/${userId}/downloadExcel`
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to download Excel file");
+          }
+
+          // Extract the file blob from the response
+          const fileBlob = await response.blob();
+
+          // Create a temporary URL for the file blob
+          const fileUrl = URL.createObjectURL(fileBlob);
+
+          // Create a temporary anchor element to initiate download
+          const downloadLink = document.createElement("a");
+          downloadLink.href = fileUrl;
+          downloadLink.download = "posts.xlsx";
+
+          // Trigger a click event on the anchor element to start download
+          downloadLink.click();
+
+          // Cleanup: revoke the temporary URL
+          URL.revokeObjectURL(fileUrl);
+        } catch (error) {
+          console.error("Error:", error.message);
+        }
+      }
+
+      // Function to extract user ID from the query string
+      function idGetFunction() {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        return urlParams.get("userId");
+      }
+
+      window.addEventListener("load", () => {
+        const userId = idGetFunction();
+        fetchUserData(userId);
+      });
+    </script>
+  </body>
+</html>
